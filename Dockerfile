@@ -2,19 +2,14 @@
 FROM node:20-slim AS frontend-build
 WORKDIR /app/frontend
 
-COPY frontend/package*.json ./
-RUN npm install
-
-# ARG quebra o cache do Docker para garantir que arquivos novos sejam copiados
-ARG CACHEBUST=1
+# Copia tudo de uma vez e instala + builda
 COPY frontend/ .
-RUN npm run build
+RUN npm install && npm run build
 
 # ─── Stage 2: Backend Python + frontend buildado ───────────────────────────────
 FROM python:3.11-slim
 WORKDIR /app
 
-# Dependências do sistema
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     curl \
@@ -22,21 +17,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Dependências Python
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Código do backend
 COPY backend/ ./backend/
 COPY start.py .
 
-# Arquivos buildados do React (vêm do stage 1)
 COPY --from=frontend-build /app/frontend/dist ./frontend/dist
 
-# Diretório temporário
 RUN mkdir -p temp
 
-# Variáveis de ambiente
 ENV HOST=0.0.0.0
 ENV PORT=8000
 ENV WHISPER_MODEL_SIZE=base
