@@ -5,6 +5,8 @@ WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm install
 
+# ARG quebra o cache do Docker para garantir que arquivos novos sejam copiados
+ARG CACHEBUST=1
 COPY frontend/ .
 RUN npm run build
 
