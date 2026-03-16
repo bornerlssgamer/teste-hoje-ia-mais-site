@@ -2,9 +2,13 @@
 FROM node:20-slim AS frontend-build
 WORKDIR /app/frontend
 
-# Copia tudo de uma vez e instala + builda
 COPY frontend/ .
-RUN npm install && npm run build
+RUN npm install
+
+# Garante que utils.ts existe e faz o build
+RUN mkdir -p src/lib && \
+    printf 'import { clsx, type ClassValue } from "clsx";\nimport { twMerge } from "tailwind-merge";\n\nexport function cn(...inputs: ClassValue[]) {\n  return twMerge(clsx(inputs));\n}\n' > src/lib/utils.ts && \
+    npm run build
 
 # ─── Stage 2: Backend Python + frontend buildado ───────────────────────────────
 FROM python:3.11-slim
